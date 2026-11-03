@@ -105,8 +105,8 @@ pores_d1, _ = worley(5000, seed=11)
 pores = 1 - np.clip(pores_d1 / 6.0, 0, 1)
 blotch = noise(90, octaves=4, seed=12)
 fine = noise(2, seed=13)
-skin_base = np.array([0.80, 0.60, 0.50])  # warm light-tan (linear-ish sRGB values)
-skin_red = np.array([0.78, 0.50, 0.44])
+skin_base = np.array([0.74, 0.52, 0.40])  # warm light-tan (linear-ish sRGB values)
+skin_red = np.array([0.70, 0.42, 0.34])
 skin_alb = skin_base * (1 - 0.35 * blotch[..., None]) + skin_red * 0.35 * blotch[..., None]
 skin_alb *= (0.97 + 0.03 * fine)[..., None]
 skin_alb *= (1 - 0.05 * pores)[..., None]

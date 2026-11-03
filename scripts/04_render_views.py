@@ -49,7 +49,7 @@ for c in (cam_coll, light_coll):
         bpy.data.objects.remove(o, do_unlink=True)
 
 # --------------------------------------------------------------------------- framing
-Z_MIN, Z_MAX = -0.14, 1.83          # pedestal bottom .. top of the hair bun
+Z_MIN, Z_MAX = -0.20, 1.85          # pedestal bottom .. top of the hair bun
 Z_CENTER = (Z_MIN + Z_MAX) / 2
 ORTHO = (Z_MAX - Z_MIN) * 1.08      # identical for all cameras
 TARGET = Vector((0.0, 0.0, Z_CENTER))
@@ -89,12 +89,12 @@ def area(name, loc, energy, size, color, size_y=None):
 
 
 # positions are relative to the front camera; the rig rotates with each camera
-area("Key_Softbox", (-1.9, -2.3, 2.5), 950, 1.6, (1.0, 0.95, 0.90))
-area("Fill_Softbox", (2.4, -1.9, 1.3), 260, 2.2, (0.86, 0.91, 1.0))
-area("Rim_Left", (-2.0, 2.0, 2.1), 520, 0.6, (1.0, 0.92, 0.85), 2.2)
-area("Rim_Right", (2.0, 2.1, 1.8), 520, 0.6, (0.85, 0.93, 1.0), 2.2)
-area("Top_Light", (0.0, 0.3, 3.4), 220, 1.2, (1.0, 1.0, 1.0))
-area("Kicker_Low", (0.0, -2.5, 0.05), 90, 1.5, (1.0, 0.95, 0.9), 0.4)
+area("Key_Softbox", (-1.9, -2.3, 2.5), 480, 1.6, (1.0, 0.95, 0.90))
+area("Fill_Softbox", (2.4, -1.9, 1.3), 120, 2.2, (0.86, 0.91, 1.0))
+area("Rim_Left", (-2.0, 2.0, 2.1), 320, 0.6, (1.0, 0.92, 0.85), 2.2)
+area("Rim_Right", (2.0, 2.1, 1.8), 320, 0.6, (0.85, 0.93, 1.0), 2.2)
+area("Top_Light", (0.0, 0.3, 3.4), 110, 1.2, (1.0, 1.0, 1.0))
+area("Kicker_Low", (0.0, -2.5, 0.05), 45, 1.5, (1.0, 0.95, 0.9), 0.4)
 
 world = bpy.data.worlds.get("Studio") or bpy.data.worlds.new("Studio")
 sc.world = world
@@ -110,7 +110,7 @@ mr = nt.nodes.new("ShaderNodeMapRange")
 mr.inputs["From Min"].default_value = -0.3
 mr.inputs["From Max"].default_value = 1.0
 bg = nt.nodes.new("ShaderNodeBackground")
-bg.inputs["Strength"].default_value = 0.35
+bg.inputs["Strength"].default_value = 0.2
 wo = nt.nodes.new("ShaderNodeOutputWorld")
 nt.links.new(tc.outputs["Generated"], sep.inputs[0])
 nt.links.new(sep.outputs["Z"], mr.inputs["Value"])
@@ -137,11 +137,10 @@ sc.render.resolution_percentage = 100
 sc.render.image_settings.file_format = "PNG"
 sc.render.image_settings.color_mode = "RGBA"
 sc.render.image_settings.color_depth = "8"
-sc.view_settings.view_transform = "AgX"
 try:
-    sc.view_settings.look = "AgX - Medium High Contrast"
+    sc.view_settings.view_transform = "Khronos PBR Neutral"  # keeps saturated orange/cyan
 except TypeError:
-    pass
+    sc.view_settings.view_transform = "AgX"
 sc.render.threads_mode = "AUTO"
 
 files = []

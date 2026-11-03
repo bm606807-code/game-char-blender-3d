@@ -137,11 +137,11 @@ def head_field(grid):
         d = S.smin(d, L(S.ellipsoid, (0, -0.034, -0.020), (0.065, 0.058, 0.070)), 0.04)    # face mass
         d = S.smin(d, L(S.ellipsoid, (0, -0.030, -0.052), (0.057, 0.052, 0.042)), 0.035)    # lower face
         for s in (-1, 1):
-            d = S.smin(d, L(S.round_cone, (s * 0.057, 0.002, -0.034), (s * 0.018, -0.067, -0.080), 0.011, 0.011), 0.03)  # jaw line
+            d = S.smin(d, L(S.round_cone, (s * 0.058, 0.002, -0.032), (s * 0.019, -0.066, -0.076), 0.011, 0.011), 0.03)  # jaw line
             d = S.smin(d, L(S.ellipsoid, (s * 0.045, -0.058, -0.002), (0.021, 0.016, 0.015)), 0.02)  # cheekbone
-            d = S.smin(d, L(S.ellipsoid, (s * 0.039, -0.062, -0.030), (0.020, 0.016, 0.020)), 0.022)  # cheek fat
+            d = S.smin(d, L(S.ellipsoid, (s * 0.040, -0.061, -0.026), (0.022, 0.018, 0.021)), 0.022)  # cheek fat
             d = S.smin(d, L(S.ellipsoid, (s * 0.030, -0.081, 0.029), (0.022, 0.010, 0.008), S.rot_xyz(0, s * -8, 0)), 0.014)  # brow
-        d = S.smin(d, L(S.ellipsoid, (0, -0.079, -0.086), (0.019, 0.015, 0.017)), 0.012)    # chin
+        d = S.smin(d, L(S.ellipsoid, (0, -0.078, -0.081), (0.020, 0.015, 0.016)), 0.014)    # chin
         d = S.smin(d, L(S.ellipsoid, (0, -0.052, 0.046), (0.056, 0.034, 0.046)), 0.03)     # forehead
         # eye sockets
         for s in (-1, 1):
@@ -167,7 +167,6 @@ def head_field(grid):
         d = S.smin(d, L(S.ellipsoid, (0, -0.0855, -0.0602), (0.0190, 0.0098, 0.0072), S.rot_xyz(10, 0, 0)), 0.005)
         d = S.smin(d, L(S.ellipsoid, (0, -0.0905, -0.0478), (0.0045, 0.0040, 0.0060)), 0.003)  # cupid's bow
         d = S.smax(d, -L(S.ellipsoid, (0, -0.0985, -0.0560), (0.0215, 0.0065, 0.0009)), 0.0012)  # mouth line
-        d = S.smax(d, -L(S.ellipsoid, (0, -0.0915, -0.0425), (0.0040, 0.0040, 0.0060)), 0.002)  # philtrum groove
         # ears
         for s in (-1, 1):
             Re = S.rot_xyz(0, 0, s * 4) @ S.rot_xyz(0, s * -6, 0)
@@ -223,15 +222,15 @@ def finger_joints(base, lengths, yaw, curls):
 def thumb_joints(pose):
     abd = np.radians(POSES[pose]["thumb_abd"])
     c1, c2 = (np.radians(a) for a in POSES[pose]["thumb"])
-    base = V(0.016, 0.024, -0.008)
-    d0 = V(np.cos(abd), np.sin(abd), -0.45); d0 /= np.linalg.norm(d0)
-    p1 = base + d0 * 0.042
+    base = V(0.022, 0.020, -0.008)
+    d0 = V(np.cos(abd), np.sin(abd), -0.40); d0 /= np.linalg.norm(d0)
+    p1 = base + d0 * 0.034
     def bend(d, a):
         # flex around an axis roughly perpendicular to the thumb, toward the palm
         ax = np.cross(d, V(0, 0, 1)); ax /= np.linalg.norm(ax)
         return d * np.cos(a) + np.cross(ax, d) * np.sin(a) * -1 + ax * np.dot(ax, d) * (1 - np.cos(a))
-    d1 = bend(d0, c1); p2 = p1 + d1 * 0.032
-    d2 = bend(d1, c2); p3 = p2 + d2 * 0.026
+    d1 = bend(d0, c1); p2 = p1 + d1 * 0.029
+    d2 = bend(d1, c2); p3 = p2 + d2 * 0.023
     return [base, p1, p2, p3]
 
 
@@ -251,7 +250,7 @@ def hand_field(grid, pose):
                 f = S.smin(f, S.sphere(X, Y, Z, pts[j] + V(0, 0, 0.0012), radii[j] * 1.06), 0.003)
             d = S.smin(d, f, 0.006)
         tp = thumb_joints(pose)
-        d = S.smin(d, S.chain(X, Y, Z, tp, [0.0140, 0.0115, 0.0102, 0.0088]), 0.008)
+        d = S.smin(d, S.chain(X, Y, Z, tp, [0.0135, 0.0112, 0.0102, 0.0094]), 0.008)
         return d
 
     grid.apply(F, grid.lo, grid.lo + (grid.n - 1) * grid.h, op="set", margin=0.0)
@@ -266,7 +265,7 @@ def glove_region(X, Y, Z, pose):
         end = pts[0] + (pts[1] - pts[0]) * 0.55
         r = np.minimum(r, S.round_cone(X, Y, Z, pts[0] - (pts[1] - pts[0]) * 0.2, end, r0 + 0.006, r0 + 0.006))
     tp = thumb_joints(pose)
-    r = np.minimum(r, S.round_cone(X, Y, Z, tp[0], tp[1] + (tp[2] - tp[1]) * 0.25, 0.022, 0.018))
+    r = np.minimum(r, S.round_cone(X, Y, Z, tp[0], tp[1], 0.019, 0.016))
     r = np.maximum(r, -0.045 - X)  # cuff ends on the forearm
     return r
 

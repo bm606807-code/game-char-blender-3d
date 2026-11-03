@@ -118,17 +118,18 @@ def phase_a():
     def hood(X, Y, Z, sl):
         phis = np.linspace(-np.pi + 0.62, np.pi - 0.62, 40)  # 0 = back, gap at the front
         pts = [V(0.108 * np.sin(p), 0.022 + 0.088 * np.cos(p), 1.438 + 0.030 * np.cos(p)) for p in phis]
-        rad = [0.020 + 0.026 * (1 + np.cos(p)) / 2 for p in phis]
+        rad = [0.026 + 0.032 * (1 + np.cos(p)) / 2 for p in phis]
         d = S.chain(X, Y, Z, pts, rad)
-        d = S.smin(d, S.ellipsoid(X, Y, Z, (0, 0.105, 1.465), (0.085, 0.045, 0.048)), 0.02)
+        d = S.smin(d, S.ellipsoid(X, Y, Z, (0, 0.112, 1.470), (0.105, 0.058, 0.060)), 0.025)
         for s in (-1, 1):
-            d = S.smin(d, S.ellipsoid(X, Y, Z, (s * 0.075, 0.085, 1.450), (0.040, 0.042, 0.038)), 0.015)
-            d = S.smin(d, S.ellipsoid(X, Y, Z, (s * 0.105, 0.010, 1.432), (0.028, 0.040, 0.026)), 0.015)
+            d = S.smin(d, S.ellipsoid(X, Y, Z, (s * 0.085, 0.090, 1.455), (0.050, 0.050, 0.045)), 0.02)
+            d = S.smin(d, S.ellipsoid(X, Y, Z, (s * 0.110, 0.012, 1.436), (0.034, 0.048, 0.032)), 0.02)
+            d = S.smin(d, S.ellipsoid(X, Y, Z, (s * 0.088, -0.060, 1.420), (0.030, 0.034, 0.026)), 0.02)
         # fabric folds
         d = d + 0.003 * np.sin(X * 140 + Z * 60) * np.sin(Y * 120 - Z * 40)
         return np.maximum(d, -(Ds[sl] - 0.007))
 
-    put("Hood_Orange", S.extract_sub(g, hood, (-0.19, -0.12, 1.36), (0.19, 0.19, 1.53)), "hood", "clothing")
+    put("Hood_Orange", S.extract_sub(g, hood, (-0.20, -0.13, 1.35), (0.20, 0.20, 1.55)), "hood", "clothing")
 
     # ---- corset / waist armour band
     def corset(X, Y, Z, sl):
@@ -167,7 +168,6 @@ def phase_a():
             e = S.ellipsoid(X, Y, Z, K + V(0, -0.020, 0.004), (0.051, 0.043, 0.070))
             d = S.shell(e, 0.0, 0.006)
             d = S.smax(d, Y - (K[1] - 0.004), 0.003)
-            d = d - 0.0015 * (np.abs(np.sin((Z - K[2]) * 90)) > 0.97)  # segment ridges
             return np.maximum(d, -(D[sl] - 0.001))
 
         put(f"KneePad_{side}", S.extract_sub(g, pad, K - 0.09, K + 0.09), "metal", "armour")
@@ -209,7 +209,7 @@ def phase_a():
 
     # ------------------------------------------------------------------ head (0.9 mm)
     log("head field (0.9 mm)")
-    hg = S.Grid((-0.105, -0.145, 1.415), (0.105, 0.150, 1.815), 0.0009)
+    hg = S.Grid((-0.105, -0.145, 1.415), (0.105, 0.150, 1.835), 0.0009)
     A.head_field(hg)
     put("Head_Skin", S.extract(hg.d, hg.lo, hg.h), "skin", "head")
     Dh = hg.d
@@ -227,7 +227,9 @@ def phase_a():
         return zl - z
 
     def hair_cap(X, Y, Z, sl):
-        d = np.maximum(S.shell(Dh[sl], -0.0015, 0.0105), hair_region(X, Y, Z))
+        hr = hair_region(X, Y, Z)
+        thick = np.clip(-hr * 0.45, 0.0006, 0.0105)  # hair thins out toward the hairline
+        d = np.maximum(np.maximum(Dh[sl] - thick, -(Dh[sl] + 0.0015)), hr)
         x, y, z = head_local(X, Y, Z)
         # combed-up grooves toward the bun
         d = d + 0.0009 * np.sin(np.arctan2(x, y + 0.03) * 70)
@@ -237,7 +239,8 @@ def phase_a():
 
     def bun(X, Y, Z, sl):
         x, y, z = head_local(X, Y, Z)
-        bc = V(0.0, 0.028, 0.132)
+        bc = V(0.0, 0.030, 0.140)
+        x, y, z = [bc[i] + (q - bc[i]) / 1.32 for i, q in enumerate(np.broadcast_arrays(x, y, z))]
         d = S.ellipsoid(x, y, z, bc, (0.034, 0.032, 0.026))
         rng = np.random.default_rng(5)
         for i in range(7):
@@ -246,11 +249,11 @@ def phase_a():
             R = S.rot_xyz(rng.random() * 40 - 20, rng.random() * 40 - 20, np.degrees(a) + 90)
             d = S.smin(d, S.ellipsoid(x, y, z, p, (0.026, 0.014, 0.015), R), 0.008)
         d = S.smin(d, S.ellipsoid(x, y, z, bc + V(0.004, -0.002, 0.020), (0.022, 0.020, 0.014)), 0.01)
-        d = S.smin(d, S.ellipsoid(x, y, z, V(0, 0.030, 0.104), (0.036, 0.034, 0.016)), 0.012)  # base
+        d = S.smin(d, S.ellipsoid(x, y, z, V(0, 0.030, 0.112), (0.036, 0.034, 0.016)), 0.012)  # base
         d = d + 0.0012 * np.sin(np.arctan2(y - bc[1], x) * 26 + z * 300)
-        return d
+        return d * 1.32
 
-    put("Hair_Bun", S.extract_sub(hg, bun, (-0.07, -0.05, 1.70), (0.07, 0.11, 1.815)), "hair", "hair")
+    put("Hair_Bun", S.extract_sub(hg, bun, (-0.09, -0.06, 1.70), (0.09, 0.13, 1.83)), "hair", "hair")
 
     def goggle_strap(X, Y, Z, sl):
         x, y, z = head_local(X, Y, Z)
@@ -278,7 +281,7 @@ def phase_a():
             hgd, lambda X, Y, Z, sl: np.maximum(S.shell(Dd[sl], 0.0004, 0.0021), A.glove_region(X, Y, Z, pose)),
             hgd.lo, hgd.lo + (hgd.n - 1) * hgd.h, 0.0)), "leather_dark", "hands")
         put(f"Glove_Knuckle_{side}", tw(S.extract_sub(
-            hgd, lambda X, Y, Z, sl: np.maximum(S.shell(Dd[sl], 0.0024, 0.0028),
+            hgd, lambda X, Y, Z, sl: np.maximum(S.shell(Dd[sl], 0.0020, 0.0016),
                                                 np.maximum(np.maximum(0.058 - X, X - 0.098),
                                                            np.maximum(0.004 - Z, np.abs(Y) - 0.036))),
             (0.04, -0.06, -0.02), (0.11, 0.06, 0.04))), "metal_dark", "hands")
@@ -378,7 +381,7 @@ def phase_b():
         "leather_brown": bl.pbr("M_Leather_Brown", "#5B4232", rough=0.6, albedo_map="leather_albedo_mask.png",
                                 albedo_is_mask=True, normal_map="leather_normal.png", normal_strength=0.7,
                                 rough_map="leather_roughness.png"),
-        "metal": bl.pbr("M_Metal_Brushed", "#8E9298", rough=0.32, metal=1.0, normal_map="metal_normal.png",
+        "metal": bl.pbr("M_Metal_Brushed", "#8E9298", rough=0.48, metal=0.85, normal_map="metal_normal.png",
                         normal_strength=0.3, rough_map="metal_roughness.png"),
         "metal_dark": bl.pbr("M_Metal_Gunmetal", "#45484E", rough=0.38, metal=1.0, normal_map="metal_normal.png",
                              normal_strength=0.3, rough_map="metal_roughness.png"),
@@ -386,9 +389,9 @@ def phase_b():
                                normal_strength=0.15, coat=0.2),
         "rubber": bl.pbr("M_Rubber_Black", "#17181A", rough=0.8, normal_map="leather_normal.png", normal_strength=0.3),
         "cyan": bl.pbr("M_Cyan_LED", "#00DDF5", rough=0.2, emission="#00DDF5", emission_strength=8.0),
-        "hair": bl.pbr("M_Hair_DarkBrown", (1, 1, 1, 1), rough=0.38, albedo_map="hair_albedo.png",
-                       normal_map="hair_normal.png", normal_strength=0.8, aniso=0.6, sheen=0.3),
-        "hair_strand": bl.pbr("M_Hair_Strands", "#2A1A12", rough=0.35, aniso=0.7, sheen=0.3),
+        "hair": bl.pbr("M_Hair_DarkBrown", (1, 1, 1, 1), rough=0.42, albedo_map="hair_albedo.png",
+                       normal_map="hair_normal.png", normal_strength=0.8, aniso=0.6),
+        "hair_strand": bl.pbr("M_Hair_Strands", "#2A1A12", rough=0.38, aniso=0.7),
         "brow": bl.pbr("M_Eyebrow", "#1E140F", rough=0.5),
         "eye": bl.pbr("M_Eye", (1, 1, 1, 1), rough=0.05, albedo_map="eye_iris.png", coat=1.0, sss=0.05),
         "lens": bl.pbr("M_Goggle_Lens", "#FF7A1A", rough=0.05, coat=1.0, transmission=0.35, spec=0.8),
@@ -476,7 +479,7 @@ def phase_b():
     cap_tree = bl.bvh(OB["Hair_Cap"])
     bun_tree = bl.bvh(OB["Hair_Bun"])
     head_tree = bl.bvh(head)
-    bun_c = W((0.0, 0.028, 0.128))
+    bun_c = W((0.0, 0.030, 0.136))
 
     # combed scalp strands: from points on the cap toward the bun base
     capv = np.array([v.co for v in OB["Hair_Cap"].data.vertices])
@@ -510,7 +513,7 @@ def phase_b():
         ax.normalize()
         u = ax.orthogonal().normalized()
         w = ax.cross(u)
-        r = 0.04 + 0.012 * rng.random()
+        r = 0.052 + 0.014 * rng.random()
         a0 = rng.random() * 2 * np.pi
         span = 1.2 + rng.random() * 2.5
         pts = []
@@ -522,12 +525,12 @@ def phase_b():
         if len(pts) > 3:
             lines.append(pts)
     # messy loose loops sticking out of the bun
-    for i in range(40):
+    for i in range(14):
         d = Vector(rng.normal(0, 1, 3)); d.z = abs(d.z) + 0.3; d.normalize()
-        base = bun_tree.find_nearest(Vector(bun_c) + d * 0.05)[0]
+        base = bun_tree.find_nearest(Vector(bun_c) + d * 0.065)[0]
         side = d.orthogonal().normalized()
         L = 0.025 + 0.035 * rng.random()
-        pts = [tuple(base + d * L * t + side * math.sin(t * math.pi) * 0.012 * (rng.random() - 0.5)
+        pts = [tuple(base + d * L * t * 0.6 + side * math.sin(t * math.pi) * 0.018
                      + Vector((0, 0, -0.01 * t * t))) for t in np.linspace(0, 1, 8)]
         lines.append(pts)
     bl.strands_object("Hair_Strands_Bun", C["hair"], lines, 0.0005, MAT["hair_strand"])
@@ -535,14 +538,14 @@ def phase_b():
     # loose face-framing strands (temples / in front of the ears)
     lines = []
     for s in (-1, 1):
-        for i in range(16):
+        for i in range(10):
             a = rng.random()
             start = W((s * (0.050 + 0.016 * a), -0.050 - 0.020 * rng.random(), 0.058 - 0.012 * a))
             L = 0.07 + 0.08 * rng.random()
             pts = []
             for t in np.linspace(0, 1, 12):
-                p = start + Rh @ np.array([s * (0.012 * t + 0.006 * math.sin(t * 7 + i)), -0.008 * t,
-                                           -L * t + 0.004 * math.sin(t * 9 + i)])
+                p = start + Rh @ np.array([s * (0.010 * t + 0.003 * math.sin(t * 4 + i)), -0.010 * t,
+                                           -L * t + 0.002 * math.sin(t * 5 + i)])
                 hit = head_tree.find_nearest(Vector(p))
                 q = Vector(p)
                 if hit[0] is not None and (q - hit[0]).length < 0.003:
@@ -714,7 +717,7 @@ def phase_b():
     ring = []
     for j in range(NZ + 1):
         t = j / NZ
-        z = -0.135 + 0.135 * t
+        z = -0.185 + 0.185 * t
         rb = 0.330 - 0.025 * t - 0.03 * max(0, t - 0.8) / 0.2
         ring.append([bm.verts.new((rb * math.cos(2 * math.pi * i / NA), rb * math.sin(2 * math.pi * i / NA), z)) for i in range(NA)])
     rad_top = 0.330 - 0.025 - 0.03
@@ -740,9 +743,9 @@ def phase_b():
         h = (math.sin(cell.x * 12.9898 + cell.y * 78.233 + cell.z * 37.719) * 43758.5453) % 1.0
         gx = ((math.sin(cell.x * 93.9 + cell.y * 67.3) * 15731.0) % 1.0) - 0.5
         gz = ((math.sin(cell.z * 41.1 + cell.x * 27.7) * 789221.0) % 1.0) - 0.5
-        facet = 0.010 * h + 0.10 * (gx * (p.x - cell.x / 9.0) + gz * (p.z - cell.z / 9.0))
-        crack = -0.004 * max(0.0, 1.0 - (dist[1] - dist[0]) * 12.0)
-        outline = 0.012 * noise.noise(Vector((math.cos(ang) * 2.2, math.sin(ang) * 2.2, 0.3)))
+        facet = 0.014 * h + 0.16 * (gx * (p.x - cell.x / 9.0) + gz * (p.z - cell.z / 9.0))
+        crack = -0.006 * max(0.0, 1.0 - (dist[1] - dist[0]) * 12.0)
+        outline = 0.035 * noise.noise(Vector((math.cos(ang) * 2.2, math.sin(ang) * 2.2, 0.3)))
         top = p.z > -0.001
         edge_w = min(1.0, max(0.0, (r - 0.20) / 0.07))
         if top:
