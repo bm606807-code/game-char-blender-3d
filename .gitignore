@@ -4,3 +4,4 @@ __pycache__/
 build_log.txt
 render_log.txt
 export_log.txt
+output/blend/backup/

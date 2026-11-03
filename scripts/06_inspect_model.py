@@ -6,8 +6,8 @@ edge counts per object, material and texture inventory.
 Usage: python3 scripts/06_inspect_model.py
 """
 from pathlib import Path
+import bpy  # must be imported before bmesh
 import bmesh
-import bpy
 from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[1]

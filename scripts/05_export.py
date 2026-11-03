@@ -43,6 +43,13 @@ bpy.ops.export_scene.fbx(filepath=str(EXP / "character.fbx"), use_selection=True
                          apply_unit_scale=True, apply_scale_options="FBX_SCALE_UNITS", path_mode="COPY",
                          embed_textures=True, axis_forward="-Z", axis_up="Y", mesh_smooth_type="FACE")
 
+# OBJ text is large: ship it zipped together with its MTL and textures (GitHub 100 MB file limit)
+import zipfile
+with zipfile.ZipFile(EXP / "character_obj.zip", "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+    for p in sorted((EXP / "obj").iterdir()):
+        z.write(p, f"character_obj/{p.name}")
+shutil.rmtree(EXP / "obj")
+
 for p in sorted(EXP.rglob("*")):
     if p.is_file():
         print(f"{p.relative_to(ROOT)}  {p.stat().st_size / 2**20:.1f} MB")

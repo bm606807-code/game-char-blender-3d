@@ -57,3 +57,20 @@ python3 scripts/05_export.py
 - Blender: Z up, metres, character faces −Y, boot soles at z = 0, pedestal below. Height is 1.75 m to the top of the skull; the bun reaches about 1.81 m.
 - Cameras rotate about the vertical axis: 0° front, 90° her right side, 180° back, 270° her left side. The character never moves.
 - Exports use the Y-up convention (glTF/OBJ/FBX).
+
+## Deliverables
+
+| # | Deliverable | File |
+|---|---|---|
+| 1 | Editable Blender project | `output/blend/character_model.blend` (collections: CHAR_*, PEDESTAL, CAMERAS, LIGHTS) |
+| 2 | 3D character mesh | 154 mesh objects, about 1.24 M faces, in the `.blend` and every export |
+| 3 | GLB | `output/export/character.glb` (textures embedded) |
+| 4 | OBJ + MTL | `output/export/character_obj.zip` (OBJ, MTL with PBR extensions, textures) |
+| — | FBX | `output/export/character.fbx` (textures embedded) |
+| 5–6 | Textures and PBR materials | `assets/textures/*.png`, 24 Principled BSDF materials |
+| 7 | Automation scripts | `scripts/` |
+| 8 | Four camera renders | `output/renders/Camera_0{1..4}_*.png` (1536×2048 RGBA) |
+| 9 | Turnaround sheet | `output/renders/turnaround_sheet.jpg` (labelled), `turnaround_sheet_rgba.png` (transparent) |
+| 10 | Quality inspection | `docs/QUALITY_INSPECTION.md`, `docs/model_stats.md` |
+
+Backups: the raw marching-cubes meshes are cached untouched in `build/cache/raw_meshes.npz`. `05_export.py` copies the `.blend` to `output/blend/backup/` before exporting (local only); git history keeps every committed version of the `.blend`.

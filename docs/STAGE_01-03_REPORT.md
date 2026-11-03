@@ -1,6 +1,6 @@
 # Stages 1–3 report: environment, reference preparation, tool selection
 
-Date: 2026-11-03 · Status: **Stages 1–2 complete, Stage 3 blocked on a decision (see "Blockers")**
+Date: 2026-11-03 · Status: **Stages 1–3 complete.** Decision taken: procedural Blender model, and `bpy` 5.2.3 installed from PyPI (owner-approved). Stages 4–10 are documented in `README.md` and `docs/QUALITY_INSPECTION.md`.
 
 ## Stage 1: Environment inspection
 
@@ -64,4 +64,4 @@ The sheet appears AI-generated and is **not** fully consistent between views. Th
 1. **No image-to-3D tool can run in this environment** under the current network policy and without a GPU.
 2. **Blender isn't installed.** The only reachable route is `pip install bpy==5.2.3`: free, but it adds 384 MB of software, and the brief asks for approval first.
 
-Stages 4–10 have **not** been started. No mesh, render or export exists yet.
+**Resolution:** the owner chose procedural modelling in Blender and approved installing `bpy`.
