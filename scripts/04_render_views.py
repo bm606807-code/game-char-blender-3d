@@ -49,7 +49,7 @@ for c in (cam_coll, light_coll):
         bpy.data.objects.remove(o, do_unlink=True)
 
 # --------------------------------------------------------------------------- framing
-Z_MIN, Z_MAX = -0.20, 1.85          # pedestal bottom .. top of the hair bun
+Z_MIN, Z_MAX = -0.20, 1.87          # pedestal bottom .. top of the hair bun
 Z_CENTER = (Z_MIN + Z_MAX) / 2
 ORTHO = (Z_MAX - Z_MIN) * 1.08      # identical for all cameras
 TARGET = Vector((0.0, 0.0, Z_CENTER))
@@ -141,6 +141,7 @@ try:
     sc.view_settings.view_transform = "Khronos PBR Neutral"  # keeps saturated orange/cyan
 except TypeError:
     sc.view_settings.view_transform = "AgX"
+sc.view_settings.exposure = float(next((a.split("=")[1] for a in sys.argv if a.startswith("--exposure=")), -1.3))
 sc.render.threads_mode = "AUTO"
 
 files = []

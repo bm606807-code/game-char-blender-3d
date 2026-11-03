@@ -32,6 +32,7 @@ BLEND_DIR = ROOT / "output" / "blend"
 BLEND_DIR.mkdir(parents=True, exist_ok=True)
 
 T0 = time.time()
+BOOT_S = np.array([1.08, 1.15, 1.04], np.float32)  # chunkier boots, as in the reference
 
 
 def log(*a):
@@ -61,7 +62,7 @@ def phase_a():
     Ds = gaussian_filter(D, 2.0).astype(np.float32)  # 4 mm blur: cloth bridges small concavities
     log("soft field ready")
 
-    def torso_prox(X, Y, Z, rx=0.205, ry=0.135):
+    def torso_prox(X, Y, Z, rx=0.215, ry=0.14):
         return np.sqrt((X / rx) ** 2 + ((Y - 0.01) / ry) ** 2) - 1.0
 
     # ---- jacket (cropped, open front, sleeves rolled to the forearm)
@@ -209,7 +210,7 @@ def phase_a():
 
     # ------------------------------------------------------------------ head (0.9 mm)
     log("head field (0.9 mm)")
-    hg = S.Grid((-0.105, -0.145, 1.415), (0.105, 0.150, 1.835), 0.0009)
+    hg = S.Grid((-0.115, -0.155, 1.415), (0.115, 0.165, 1.86), 0.0009)
     A.head_field(hg)
     put("Head_Skin", S.extract(hg.d, hg.lo, hg.h), "skin", "head")
     Dh = hg.d
@@ -217,7 +218,7 @@ def phase_a():
     Rh = A.HEAD_R
 
     def head_local(X, Y, Z):
-        return S.local(X, Y, Z, c, Rh)
+        return tuple(q / A.HS for q in S.local(X, Y, Z, c, Rh))
 
     def hair_region(X, Y, Z):
         x, y, z = head_local(X, Y, Z)
@@ -251,9 +252,9 @@ def phase_a():
         d = S.smin(d, S.ellipsoid(x, y, z, bc + V(0.004, -0.002, 0.020), (0.022, 0.020, 0.014)), 0.01)
         d = S.smin(d, S.ellipsoid(x, y, z, V(0, 0.030, 0.112), (0.036, 0.034, 0.016)), 0.012)  # base
         d = d + 0.0012 * np.sin(np.arctan2(y - bc[1], x) * 26 + z * 300)
-        return d * 1.32
+        return d * 1.32 * A.HS
 
-    put("Hair_Bun", S.extract_sub(hg, bun, (-0.09, -0.06, 1.70), (0.09, 0.13, 1.83)), "hair", "hair")
+    put("Hair_Bun", S.extract_sub(hg, bun, (-0.10, -0.07, 1.68), (0.10, 0.15, 1.86)), "hair", "hair")
 
     def goggle_strap(X, Y, Z, sl):
         x, y, z = head_local(X, Y, Z)
@@ -298,7 +299,7 @@ def phase_a():
         Db = bg.d.copy()
         M = A.boot_matrix(side)
         lat = 1 if side == "L" else -1
-        tw = lambda vf: (xform(vf[0], M), vf[1])
+        tw = lambda vf: (xform(vf[0] * BOOT_S, M), vf[1])
         full = (bg.lo, bg.lo + (bg.n - 1) * bg.h)
         put(f"Boot_Upper_{side}", tw(S.extract(Db, bg.lo, bg.h)), "leather_dark", "boots")
         sole = S.Grid((-0.11, -0.075, -0.002), (0.225, 0.075, 0.06), 0.0012)
@@ -445,7 +446,7 @@ def phase_b():
 
     head = OB["Head_Skin"]
     fc = bl.face_centers(head)
-    loc = (fc - SK["head_c"]) @ A.HEAD_R  # world -> head-local
+    loc = (fc - SK["head_c"]) @ A.HEAD_R / A.HS  # world -> head-local
     lips = ((((loc[:, 0] / 0.0235) ** 2 + ((loc[:, 1] + 0.088) / 0.014) ** 2 + ((loc[:, 2] + 0.0556) / 0.0128) ** 2) < 1.0)
             & (loc[:, 1] < -0.080))
     bl.assign_by_mask(head, lips, MAT["lips"])
@@ -461,21 +462,21 @@ def phase_b():
         p = A.head_to_world(A.EYE_LOCAL[s])
         eye = bl.uvsphere(f"Eye_{'L' if s > 0 else 'R'}", C["head"], A.EYE_R, tuple(p), mat=MAT["eye"], seg=48, rings=32)
         me = eye.data
-        uv = me.uv_layers.new(name="UVMap")
+        uv = me.uv_layers[0]  # replace the default lat-long UVs with a planar iris projection
         Rinv = A.HEAD_R.T
-        S_ = 0.0122
+        S_ = 0.0122 * A.HS
         for poly in me.polygons:
             for li in poly.loop_indices:
                 co = np.array(me.vertices[me.loops[li].vertex_index].co)
                 # sphere created unrotated in world; express in head-local to face forward
-                l = Rinv @ co
+                l = Rinv @ co  # mesh coords are object-local (sphere centred on the eye)
                 uv.data[li].uv = (l[0] / S_ + 0.5, l[2] / S_ + 0.5) if l[1] < 0 else (0.0, 0.0)
 
     # ------------------------------------------------------------------ strands: hair, brows, lashes
     rng = np.random.default_rng(7)
     hc = SK["head_c"]
     Rh = A.HEAD_R
-    W = lambda p: hc + Rh @ np.asarray(p, float)
+    W = lambda p: hc + Rh @ (np.asarray(p, float) * A.HS)
     cap_tree = bl.bvh(OB["Hair_Cap"])
     bun_tree = bl.bvh(OB["Hair_Bun"])
     head_tree = bl.bvh(head)
@@ -671,7 +672,7 @@ def phase_b():
         Mw = Matrix([list(r) for r in M])
         bc = C["boots"]
         for sgn in (-1, 1):
-            p = Mw @ Vector((0.0, sgn * 0.056, 0.095))
+            p = Mw @ Vector(np.array((0.0, sgn * 0.056, 0.095)) * BOOT_S)
             yaw = math.degrees(math.atan2(M[1, 0], M[0, 0]))
             bl.cylinder(f"Boot_AnkleDisc_{side}_{sgn}", bc, 0.022, 0.008, tuple(p), rot=(90, 0, yaw),
                         mat=MAT["metal_dark"], verts=32)
@@ -685,7 +686,7 @@ def phase_b():
         eyel = []
         for i, (x, z) in enumerate(rows):
             for sgn in ((-1, 1) if i % 2 == 0 else (1, -1)):
-                q = Mw @ Vector((x + 0.03, sgn * 0.018, z))
+                q = Mw @ Vector(np.array((x + 0.03, sgn * 0.018, z)) * BOOT_S)
                 hit = up_tree.find_nearest(q)
                 p = hit[0] + hit[1] * 0.002
                 lace.append(tuple(p))

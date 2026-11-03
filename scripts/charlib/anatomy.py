@@ -11,23 +11,23 @@ V = lambda *a: np.array(a, float)
 
 # ----------------------------------------------------------------------------- skeleton (metres)
 SK = {
-    "head_c": V(0.0, -0.004, 1.632),
+    "head_c": V(0.0, -0.004, 1.622),
     "neck_base": V(0.0, 0.012, 1.455),
     # arms
     "R_sh": V(-0.164, 0.010, 1.394), "R_el": V(-0.214, 0.040, 1.128), "R_wr": V(-0.236, 0.006, 0.898),
     "L_sh": V(0.164, 0.010, 1.394), "L_el": V(0.292, -0.112, 1.212), "L_wr": V(0.372, -0.338, 1.252),
     # legs
-    "R_hip": V(-0.088, 0.008, 0.865), "R_kn": V(-0.100, -0.006, 0.492), "R_an": V(-0.112, 0.022, 0.088),
-    "L_hip": V(0.088, 0.008, 0.865), "L_kn": V(0.100, -0.006, 0.492), "L_an": V(0.112, 0.022, 0.088),
+    "R_hip": V(-0.093, 0.008, 0.865), "R_kn": V(-0.100, -0.006, 0.492), "R_an": V(-0.112, 0.022, 0.088),
+    "L_hip": V(0.093, 0.008, 0.865), "L_kn": V(0.100, -0.006, 0.492), "L_an": V(0.112, 0.022, 0.088),
 }
 FOOT_YAW = {"R": -9.0, "L": 9.0}  # toes turned slightly outward (deg about Z)
 
 TORSO_TABLE = [
     # z,     hw,    front, back,  yc,    exponent
     (0.780, 0.148, 0.080, 0.084, 0.010, 2.2),
-    (0.840, 0.167, 0.085, 0.094, 0.012, 2.3),
-    (0.900, 0.176, 0.086, 0.098, 0.012, 2.4),
-    (0.960, 0.165, 0.084, 0.088, 0.010, 2.4),
+    (0.840, 0.177, 0.087, 0.098, 0.012, 2.3),
+    (0.900, 0.186, 0.088, 0.102, 0.012, 2.4),
+    (0.960, 0.172, 0.085, 0.090, 0.010, 2.4),
     (1.020, 0.144, 0.080, 0.076, 0.006, 2.3),
     (1.080, 0.127, 0.077, 0.070, 0.004, 2.2),
     (1.140, 0.132, 0.083, 0.074, 0.002, 2.2),
@@ -64,7 +64,7 @@ def body_field(grid):
     for s in (-1, 1):
         # glutes, bust, shoulder blades, obliques
         torso_bits += [
-            (lambda X, Y, Z, s=s: S.ellipsoid(X, Y, Z, (s * 0.071, 0.066, 0.858), (0.078, 0.062, 0.088),
+            (lambda X, Y, Z, s=s: S.ellipsoid(X, Y, Z, (s * 0.074, 0.068, 0.858), (0.084, 0.068, 0.092),
                                                S.rot_xyz(0, s * 8, 0)), 0.035),
             (lambda X, Y, Z, s=s: S.ellipsoid(X, Y, Z, (s * 0.077, -0.070, 1.252), (0.064, 0.054, 0.058),
                                                S.rot_xyz(-8, 0, s * 14)), 0.03),
@@ -82,9 +82,9 @@ def body_field(grid):
         top = H + V(-s * 0.004, 0.0, 0.03)
 
         def leg(X, Y, Z, H=H, K=K, A=A, top=top, s=s):
-            d = S.round_cone(X, Y, Z, top, K, 0.084, 0.054)
+            d = S.round_cone(X, Y, Z, top, K, 0.092, 0.055)
             d = S.smin(d, S.round_cone(X, Y, Z, K, A, 0.050, 0.031), 0.02)
-            d = S.smin(d, S.ellipsoid_along(X, Y, Z, lerp(H, K, 0.15) + V(0, -0.028, 0), lerp(H, K, 0.92) + V(0, -0.03, 0), 0.058, 0.048), 0.03)  # quads
+            d = S.smin(d, S.ellipsoid_along(X, Y, Z, lerp(H, K, 0.15) + V(0, -0.028, 0), lerp(H, K, 0.92) + V(0, -0.03, 0), 0.064, 0.052), 0.03)  # quads
             d = S.smin(d, S.ellipsoid_along(X, Y, Z, lerp(H, K, 0.1) + V(s * 0.036, 0.0, 0), lerp(H, K, 0.75) + V(s * 0.03, 0, 0), 0.042, 0.055), 0.03)  # vastus lateralis
             d = S.smin(d, S.ellipsoid_along(X, Y, Z, lerp(H, K, 0.1) + V(0, 0.032, 0), lerp(H, K, 0.85) + V(0, 0.03, 0), 0.050, 0.045), 0.03)  # hamstrings
             d = S.smin(d, S.ellipsoid_along(X, Y, Z, lerp(H, K, 0.35) + V(-s * 0.040, -0.005, 0), lerp(H, K, 0.95) + V(-s * 0.025, 0, 0), 0.036, 0.040), 0.03)  # adductors
@@ -120,6 +120,7 @@ def body_field(grid):
 
 # ============================================================================= HEAD
 HEAD_R = S.rot_xyz(0, 0, 6.0)  # slight turn toward the gesturing hand (her left)
+HS = 1.10  # head scale (the reference uses slightly heroic head proportions)
 
 
 def head_field(grid):
@@ -131,7 +132,7 @@ def head_field(grid):
 
     # build everything in head-local space by transforming the grid coordinates
     def F(X, Y, Z):
-        x, y, z = S.local(X, Y, Z, c, R)
+        x, y, z = (q / HS for q in S.local(X, Y, Z, c, R))
         L = lambda fn, *a, **k: fn(x, y, z, *a, **k)
         d = L(S.ellipsoid, (0, 0.010, 0.022), (0.0745, 0.094, 0.090))                      # cranium
         d = S.smin(d, L(S.ellipsoid, (0, -0.034, -0.020), (0.065, 0.058, 0.070)), 0.04)    # face mass
@@ -177,6 +178,7 @@ def head_field(grid):
         d = S.smin(d, L(S.round_cone, (0, 0.010, -0.050), (0, 0.016, -0.205), 0.050, 0.055), 0.025)
         for s in (-1, 1):  # sternocleidomastoid
             d = S.smin(d, L(S.round_cone, (s * 0.048, 0.012, -0.045), (s * 0.016, -0.036, -0.185), 0.012, 0.010), 0.018)
+        d = d * HS
         d = S.smax(d, (1.425 - Z), 0.004)  # cut below the bodysuit collar
         return d
 
@@ -184,11 +186,11 @@ def head_field(grid):
 
 
 EYE_LOCAL = {s: V(s * 0.031, -0.0775, 0.011) for s in (-1, 1)}
-EYE_R = 0.0118
+EYE_R = 0.0118 * HS
 
 
 def head_to_world(p):
-    return SK["head_c"] + HEAD_R @ V(*p)
+    return SK["head_c"] + HEAD_R @ (V(*p) * HS)
 
 
 # ============================================================================= HANDS
