@@ -105,8 +105,8 @@ pores_d1, _ = worley(5000, seed=11)
 pores = 1 - np.clip(pores_d1 / 6.0, 0, 1)
 blotch = noise(90, octaves=4, seed=12)
 fine = noise(2, seed=13)
-skin_base = np.array([0.74, 0.52, 0.40])  # warm light-tan (linear-ish sRGB values)
-skin_red = np.array([0.70, 0.42, 0.34])
+skin_base = np.array([0.66, 0.50, 0.41])  # warm light-tan (linear-ish sRGB values)
+skin_red = np.array([0.64, 0.44, 0.37])
 skin_alb = skin_base * (1 - 0.35 * blotch[..., None]) + skin_red * 0.35 * blotch[..., None]
 skin_alb *= (0.97 + 0.03 * fine)[..., None]
 skin_alb *= (1 - 0.05 * pores)[..., None]
@@ -151,8 +151,8 @@ th = np.arctan2(Y - cy, X - cx)
 fibres = noise(2, seed=41)
 radial = 0.5 + 0.5 * np.sin(th * 90 + 6 * fibres)
 iris = np.zeros((N, N, 3))
-base = np.array([0.30, 0.17, 0.08]) * (0.75 + 0.5 * radial[..., None] * (1 - r[..., None]))
-collar = np.exp(-((r - 0.42) / 0.12) ** 2)[..., None] * np.array([0.35, 0.25, 0.08])
+base = np.array([0.16, 0.09, 0.045]) * (0.75 + 0.5 * radial[..., None] * (1 - r[..., None]))
+collar = np.exp(-((r - 0.42) / 0.12) ** 2)[..., None] * np.array([0.14, 0.10, 0.04])
 iris = base + collar
 limbal = np.clip((r - 0.82) / 0.1, 0, 1)[..., None]
 iris = iris * (1 - limbal) + np.array([0.04, 0.03, 0.02]) * limbal

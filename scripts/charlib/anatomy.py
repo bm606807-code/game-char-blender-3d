@@ -241,7 +241,7 @@ def hand_field(grid, pose):
         d = S.round_box(X, Y, Z, (0.050, 0.0, 0.001), (0.044, 0.038, 0.0125), 0.010)  # palm
         d = S.smin(d, S.ellipsoid(X, Y, Z, (0.030, 0.022, -0.007), (0.030, 0.017, 0.013)), 0.008)  # thenar
         d = S.smin(d, S.ellipsoid(X, Y, Z, (0.045, -0.026, -0.006), (0.034, 0.013, 0.010)), 0.008)  # hypothenar
-        d = S.smin(d, S.ellipsoid(X, Y, Z, (-0.012, 0.0, 0.0), (0.035, 0.027, 0.0185)), 0.012)    # wrist
+        d = S.smin(d, S.ellipsoid(X, Y, Z, (-0.016, 0.0, 0.0), (0.032, 0.0235, 0.0160)), 0.012)    # wrist
         for name, (base, lens, r0, yaw) in FINGERS.items():
             pts = finger_joints(base, lens, yaw, P[name])
             radii = [r0, r0 * 0.92, r0 * 0.84, r0 * 0.74]
@@ -265,6 +265,9 @@ def glove_region(X, Y, Z, pose):
         end = pts[0] + (pts[1] - pts[0]) * 0.55
         r = np.minimum(r, S.round_cone(X, Y, Z, pts[0] - (pts[1] - pts[0]) * 0.2, end, r0 + 0.006, r0 + 0.006))
     tp = thumb_joints(pose)
+    # the palm half-space would swallow the thumb: carve its phalanges out, keep the metacarpal
+    thumb_free = S.chain(X, Y, Z, [tp[1] + (tp[2] - tp[1]) * 0.12, tp[2], tp[3] + (tp[3] - tp[2]) * 0.4], [0.016] * 3)
+    r = np.maximum(r, -thumb_free)
     r = np.minimum(r, S.round_cone(X, Y, Z, tp[0], tp[1], 0.019, 0.016))
     r = np.maximum(r, -0.045 - X)  # cuff ends on the forearm
     return r
