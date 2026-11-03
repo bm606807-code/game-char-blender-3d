@@ -54,7 +54,7 @@ python3 scripts/05_export.py
 
 ## Coordinate conventions
 
-- Blender: Z up, metres, character faces −Y, boot soles at z = 0, pedestal below. Height is 1.75 m to the top of the skull; the bun reaches about 1.81 m.
+- Blender: Z up, metres, character faces −Y, boot soles at z = 0, pedestal below. Height is 1.75 m to the top of the skull; the bun reaches about 1.84 m.
 - Cameras rotate about the vertical axis: 0° front, 90° her right side, 180° back, 270° her left side. The character never moves.
 - Exports use the Y-up convention (glTF/OBJ/FBX).
 
